@@ -62,14 +62,42 @@ final class CartWiseStore: ObservableObject {
         groups.reduce(0) { $0 + $1.total }
     }
 
+    var totalItemCount: Int {
+        groups.reduce(0) { result, group in
+            result + group.items.reduce(0) { $0 + $1.quantity }
+        }
+    }
+
+    var purchasedItemCount: Int {
+        groups.reduce(0) { result, group in
+            result + group.items.filter { $0.isPurchased }.count
+        }
+    }
+
     func addGroup(name: String, taxRate: Double) {
-        groups.append(ShoppingGroup(name: name, taxRate: taxRate))
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanName.isEmpty else { return }
+
+        let groupExists = groups.contains {
+            $0.name.lowercased() == cleanName.lowercased()
+        }
+
+        guard !groupExists else { return }
+
+        let validTaxRate = max(0, taxRate)
+        groups.append(ShoppingGroup(name: cleanName, taxRate: validTaxRate))
     }
 
     func updateGroup(id: UUID, name: String, taxRate: Double) {
         guard let index = groups.firstIndex(where: { $0.id == id }) else { return }
-        groups[index].name = name
-        groups[index].taxRate = taxRate
+
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanName.isEmpty else { return }
+
+        let validTaxRate = max(0, taxRate)
+
+        groups[index].name = cleanName
+        groups[index].taxRate = validTaxRate
     }
 
     func deleteGroup(id: UUID) {
@@ -78,7 +106,22 @@ final class CartWiseStore: ObservableObject {
 
     func addItem(to groupID: UUID, name: String, price: Double, quantity: Int, notes: String) {
         guard let groupIndex = groups.firstIndex(where: { $0.id == groupID }) else { return }
-        let item = ShoppingItem(name: name, price: price, quantity: quantity, notes: notes)
+
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !cleanName.isEmpty else { return }
+
+        let validPrice = max(0, price)
+        let validQuantity = max(1, quantity)
+
+        let item = ShoppingItem(
+            name: cleanName,
+            price: validPrice,
+            quantity: validQuantity,
+            notes: cleanNotes
+        )
+
         groups[groupIndex].items.append(item)
     }
 
@@ -86,10 +129,15 @@ final class CartWiseStore: ObservableObject {
         guard let groupIndex = groups.firstIndex(where: { $0.id == groupID }) else { return }
         guard let itemIndex = groups[groupIndex].items.firstIndex(where: { $0.id == itemID }) else { return }
 
-        groups[groupIndex].items[itemIndex].name = name
-        groups[groupIndex].items[itemIndex].price = price
-        groups[groupIndex].items[itemIndex].quantity = quantity
-        groups[groupIndex].items[itemIndex].notes = notes
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !cleanName.isEmpty else { return }
+
+        groups[groupIndex].items[itemIndex].name = cleanName
+        groups[groupIndex].items[itemIndex].price = max(0, price)
+        groups[groupIndex].items[itemIndex].quantity = max(1, quantity)
+        groups[groupIndex].items[itemIndex].notes = cleanNotes
     }
 
     func deleteItem(groupID: UUID, itemID: UUID) {
@@ -102,6 +150,14 @@ final class CartWiseStore: ObservableObject {
         guard let itemIndex = groups[groupIndex].items.firstIndex(where: { $0.id == itemID }) else { return }
 
         groups[groupIndex].items[itemIndex].isPurchased.toggle()
+    }
+
+    func group(for id: UUID) -> ShoppingGroup? {
+        groups.first { $0.id == id }
+    }
+
+    func clearAllData() {
+        groups.removeAll()
     }
 
     private func saveGroups() {
