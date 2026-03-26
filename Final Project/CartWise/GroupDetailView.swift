@@ -148,6 +148,13 @@ struct GroupDetailView: View {
                                 showPurchasedOnly.toggle()
                             }
                             .foregroundColor(.black)
+
+                            Spacer()
+
+                            Button("Delete Purchased") {
+                                store.deletePurchasedItems(groupID: group.id)
+                            }
+                            .foregroundColor(.black)
                         }
                         .padding(.horizontal, 8)
                         .font(.headline)

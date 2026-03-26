@@ -170,4 +170,9 @@ final class CartWiseStore: ObservableObject {
         guard let savedGroups = try? JSONDecoder().decode([ShoppingGroup].self, from: data) else { return }
         groups = savedGroups
     }
+
+    func deletePurchasedItems(groupID: UUID) {
+    guard let groupIndex = groups.firstIndex(where: { $0.id == groupID }) else { return }
+    groups[groupIndex].items.removeAll { $0.isPurchased }
+}
 }
