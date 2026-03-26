@@ -16,7 +16,21 @@ final class AppRouter: ObservableObject {
     }
 
     func goHome() {
+        showWelcome = true
+        path = NavigationPath()
+    }
+
+    func goToGroupDetail(id: UUID) {
         showWelcome = false
+        path.append(AppRoute.groupDetail(id))
+    }
+
+    func goToSummary() {
+        showWelcome = false
+        path.append(AppRoute.summary)
+    }
+
+    func resetNavigation() {
         path = NavigationPath()
     }
 }
